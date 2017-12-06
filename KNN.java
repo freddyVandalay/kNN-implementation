@@ -17,14 +17,26 @@ public class KNN {
 
 	public KNN(){
 		setLabel("earns");
+
 		trainingData = importData("adult.train.5fold.csv");
 		
 		replaceMissingValues(1,trainingData);
 		replaceMissingValues(6,trainingData);
 		replaceMissingValues(13,trainingData);
+		//0,2,4,10,10,12
 		normalise(0,trainingData);
+		normalise(2,trainingData);
+		normalise(4,trainingData);
+		normalise(10,trainingData);
+		normalise(11,trainingData);
+		normalise(12,trainingData);
 		System.out.println(trainingData[1][0]);
-        
+        System.out.println(trainingData[1][2]);
+        System.out.println(trainingData[1][4]);
+
+        double eu = euclideanDistance(1, trainingData, trainingData);
+        System.out.println(eu);
+        //System.out.println(trainingData[1][4]);
 		//System.out.println(getMax(0, trainingData));
 		//findMostCommonAttr(7,trainingData);
 		//testData = importData("adult.test.csv");
@@ -67,7 +79,7 @@ public class KNN {
 		int w = 0;
 		ArrayList<Integer> columnsWithMissingValues = new ArrayList<Integer>();
 
-		while(dataSet.hasNextLine() && w<20){
+		while(dataSet.hasNextLine() && w<40){
 			rows++;
 			//Set the num of columns for the matrix
 			row = dataSet.nextLine().split(",");
@@ -196,6 +208,8 @@ public class KNN {
 			column.add(number);
 		}
 		Collections.sort(column);
+		System.out.println(column.get(0));
+
 		return column.get(0);
 	}
 
@@ -207,6 +221,7 @@ public class KNN {
 			column.add(number);
 		}
 		Collections.sort(column);
+		System.out.println(column.get(column.size()-1));
 		return column.get(column.size()-1);
 
 	}
@@ -224,22 +239,97 @@ public class KNN {
 		}
 	}
 
-	private void euclideanDistance(){
+	private void 
+	private double euclideanDistance(int row, String [][] p1, String[][] p2){
 
+		double distance = 0;
+		for (int i = 0; i < 14; i++){
+			//System.out.println("Euclidean i " + i);
+			System.out.println("Euclidean p1" + p1[row][i]);
+			System.out.println("Euclidean p2" + p2[row+1][i]);
+			
+			try{
+				Double dp1 = Double.parseDouble(p1[row][i]);
+				Double dp2 = Double.parseDouble(p2[row+1][i]);
+				distance = distance + Math.pow(dp1- dp2, 2.0);
+				System.out.println(Math.pow(dp1- dp2, 2.0));
+			}
+			catch(Exception e){
+
+				if(p1[row][i].equals(p2[row+1][i])){
+					distance++;
+					System.out.println("Equal: " );
+				}
+			}
+		
+			
+		
+			
+			/*
+			if(i == 1 && p1[row][i].equals(p2[row+1][i])){
+				distance++;
+			}
+			else if(i == 2){
+				double dp1 = Double.parseDouble(p1[row][i]);
+				double dp2 = Double.parseDouble(p2[row+1][i]);
+				distance = distance + Math.pow(dp1- dp2, 2.0);
+			}
+			else if(i == 3 && p1[row][i].equals(p2[row+1][i])){
+				distance++;
+			}
+			else if(i == 4){
+				double dp1 = Double.parseDouble(p1[row][i]);
+				double dp2 = Double.parseDouble(p2[row+1][i]);
+				distance = distance + Math.pow(dp1- dp2, 2.0);
+			}
+			else if(i == 5 && p1[row][i].equals(p2[row+1][i])){
+				distance++;
+			}
+			else if(i == 6 && p1[row][i].equals(p2[row+1][i])){
+				distance++;
+			}
+			else if(i == 7 && p1[row][i].equals(p2[row+1][i])){
+				distance++;
+			}
+			else if(i == 8 && p1[row][i].equals(p2[row+1][i])){
+				distance++;
+			}
+			else if(i == 9 && p1[row][i].equals(p2[row+1][i])){
+				distance++;
+			}
+			else if(i == 10){
+				double dp1 = Double.parseDouble(p1[row][i]);
+				double dp2 = Double.parseDouble(p2[row+1][i]);
+				distance = distance + Math.pow(dp1- dp2, 2.0);
+			}
+			else if(i == 11){
+				double dp1 = Double.parseDouble(p1[row][i]);
+				double dp2 = Double.parseDouble(p2[row+1][i]);
+				distance = distance + Math.pow(dp1- dp2, 2.0);
+			}
+			else if(i == 12){
+				double dp1 = Double.parseDouble(p1[row][i]);
+				double dp2 = Double.parseDouble(p2[row+1][i]);
+				distance = distance + Math.pow(dp1- dp2, 2.0);	
+			}
+			else if(i == 13 && p1[row][i].equals(p2[row+1][i])){
+				distance++;
+			}
+			else {
+				double dp1 = Double.parseDouble(p1[row][i]);
+				double dp2 = Double.parseDouble(p2[row+1][i]);
+				distance = distance + Math.pow(dp1- dp2, 2.0);
+			}
+				*/
+		}
+	
+		return distance;
 	}
 
 	private void fiveCV(String [][] dataSet){
-		String[][] fold_1;
-		String[][] fold_2;
-		String[][] fold_3;
-		String[][] fold_4;
-		String[][] fold_5;
+		String[][] current_fold;
+		String[][] training_folds;
 
-		String[][] temp_fold_1;
-		String[][] temp_fold_2;
-		String[][] temp_fold_3;
-		String[][] temp_fold_4;
-		String[][] temp_fold_5;
 
 		for (int i = 0; i < rows; i++){
         		System.out.println("Data: " + i);
