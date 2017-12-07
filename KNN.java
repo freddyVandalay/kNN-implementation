@@ -12,7 +12,7 @@ public class KNN {
 	Scanner readFile;
 	String label;
 	int columns;
-	int maxRecords = 10;
+	int maxRecords = 200;
 	//int rows;
 	//Path pathToFile;
 
@@ -366,10 +366,11 @@ public class KNN {
 
 	private void fiveCV(int folds, String [][] dataSet){
 		ArrayList<Integer> current_fold;
-		ArrayList<Double> k_accuracy;
+		ArrayList<Double> k_accuracy = new ArrayList<Double>();
 		ArrayList<Integer> valuesOf_k = new ArrayList<Integer>();
-		//int predictedRight = 0;
-		for(int i = 1; i<10; i= i+2){
+		double predictedRight = 0;
+		double accuracy;
+		for(int i = 1; i<40; i= i+2){
 			valuesOf_k.add(i);
 		}
 		
@@ -377,6 +378,9 @@ public class KNN {
 
 		while(k_iterator.hasNext()){
 			int k = k_iterator.next();
+			System.out.println("K is: " + k);
+			predictedRight=0;
+			accuracy=0;
 			for(int fold=1; fold <= folds; fold++){
 				current_fold = new ArrayList<Integer>();
 				for (int i = 1; i < dataSet.length; i++){
@@ -384,7 +388,7 @@ public class KNN {
 						current_fold.add(i);
 					}
 				}
-				//System.out.println("Fold length: " + current_fold.size() + " FOLD COUNT: " + fold);
+				System.out.println("Fold " + fold + " length: " + current_fold.size());
 				Iterator <Integer> iterator = current_fold.iterator();
 
 			
@@ -393,12 +397,18 @@ public class KNN {
 					//System.out.println("Iterator input" + x);
 					//kayNN(k ,x, dataSet, dataSet);
 					if(dataSet[x][14].equals(kayNN(k ,x, dataSet, dataSet))){
-					System.out.println("YOure the best");
+						predictedRight++;
+						//System.out.println("You're the best");
+					}
+					else{
+						//System.out.println("Wrong");
 					}
 				}
 			}
+			accuracy=predictedRight/dataSet.length;
+			k_accuracy.add(accuracy);
 		}
-
+		System.out.println(k_accuracy);
 	}
 
 
