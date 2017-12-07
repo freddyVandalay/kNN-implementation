@@ -12,17 +12,24 @@ public class KNN {
 	Scanner readFile;
 	String label;
 	int columns;
-	int rows;
+	//int rows;
 	//Path pathToFile;
+
+	Map<Double, Integer> neighbours;
 
 	public KNN(){
 		setLabel("earns");
 
 		trainingData = importData("adult.train.5fold.csv");
-		
+		testData = importData("adult.test.csv");
 		replaceMissingValues(1,trainingData);
 		replaceMissingValues(6,trainingData);
 		replaceMissingValues(13,trainingData);
+		
+		replaceMissingValues(1,testData);
+		replaceMissingValues(6,testData);
+		replaceMissingValues(13,testData);
+		
 		//0,2,4,10,10,12
 		normalise(0,trainingData);
 		normalise(2,trainingData);
@@ -30,14 +37,23 @@ public class KNN {
 		normalise(10,trainingData);
 		normalise(11,trainingData);
 		normalise(12,trainingData);
-		System.out.println(trainingData[1][0]);
-        System.out.println(trainingData[1][2]);
-        System.out.println(trainingData[1][4]);
-
-        double eu = euclideanDistance(1, trainingData, trainingData);
-        System.out.println(eu);
+		
+		normalise(0,testData);
+		normalise(2,testData);
+		normalise(4,testData);
+		normalise(10,testData);
+		normalise(11,testData);
+		normalise(12,testData);
+	
+		//System.out.println(trainingData[1][0]);
+        //System.out.println(testData[1][0]);
         //System.out.println(trainingData[1][4]);
-		//System.out.println(getMax(0, trainingData));
+
+        kayNN(3,1, testData, trainingData);
+        //double eu = euclideanDistance(1, trainingData,trainingData);
+        //System.out.println(eu);
+        //System.out.println(trainingData[1][4]);
+		//System.out.println(getMax(0, trainingData, trainingData));
 		//findMostCommonAttr(7,trainingData);
 		//testData = importData("adult.test.csv");
 		//replaceMissingValues(1,testData);
@@ -70,31 +86,31 @@ public class KNN {
 	}
 
 	private String [][] buildDataMatrix(Scanner dataSet){
-		String [][] data;
+		String [][] data = new String[0][0];
 		String [] row;
-		rows = 0;
+		//rows = 0;
 		columns = 0;
 		String [][] tempData;
-		data = new String [rows][columns];
+		data = new String [data.length][columns];
 		int w = 0;
 		ArrayList<Integer> columnsWithMissingValues = new ArrayList<Integer>();
 
-		while(dataSet.hasNextLine() && w<40){
-			rows++;
+		while(dataSet.hasNextLine() && w<5){
+			//rows++;
 			//Set the num of columns for the matrix
 			row = dataSet.nextLine().split(",");
 			if(columns == 0){
 				columns = row.length;
 				//System.out.println("nr of columns: " + columns);
 				//create matrix
-				data = new String [rows][columns];
+				data = new String [data.length][columns];
 			}
 			//Create a new matrix with space for new data
-			tempData = new String [rows][columns];
+			tempData = new String [data.length+1][columns];
 			
 	
 			//copy data
-			for (int i = 0; i < rows-1; i++){
+			for (int i = 0; i < data.length; i++){
             	for (int j = 0; j < columns; j++){
             		tempData[i][j] = data[i][j];
             		//System.out.println("Copy data: " + data[i][j]);
@@ -103,18 +119,18 @@ public class KNN {
         
        		//Add new data
         	for(int k=0; k<columns;k++){
-        		tempData[rows-1][k]=row[k].replaceAll("\\s","");//Ignores whitespace
-        		//System.out.println("Added data to temp: " + tempData[rows-1][k]);
-        		if(tempData[rows-1][k].equals("?")){
+        		tempData[data.length][k]=row[k].replaceAll("\\s","");//Ignores whitespace
+        		//System.out.println("Added data to temp: " + tempData[data.length][k]);
+        		if(tempData[data.length][k].equals("?")){
         			if(!columnsWithMissingValues.contains(k)){
         				columnsWithMissingValues.add(k);
-        				System.out.println("Missing value on column: " + k);
+        				//System.out.println("Missing value on column: " + k);
         			}
         		}
         	}
         	
         	//set new data set variable
-        	data = new String [rows][columns];
+        	data = new String [data.length][columns];
         	data=tempData;
         	/*
         	for (int i = 0; i < rows; i++){
@@ -135,14 +151,15 @@ public class KNN {
 	//performed on 1, 6, 13 
 	private void replaceMissingValues(int column, String [][] dataSet){
 			String word = findMostCommonAttr(column, dataSet);
-		    System.out.println(word);
-		    System.out.println(column);
-		    for(int k=1; k<rows;k++){
+		    //System.out.println(word);
+		    //System.out.println(column);
+		    //System.out.println("Length" + dataSet.length);
+		    for(int k=1; k<dataSet.length;k++){
 		    	
-        		if(trainingData[k][column].equals("?")){
-        				System.out.println("Before: " + trainingData[k][column]);
+        		if(dataSet[k][column].equals("?")){
+        				System.out.println("Before: " + dataSet[k][column]);
         				trainingData[k][column] = word;
-        				System.out.println("Replaced: " + trainingData[k][column] + " " + column + " " + k);
+        				System.out.println("Replaced: " + dataSet[k][column] + " " + column + " " + k);
         			
         		}
         	}
@@ -159,7 +176,7 @@ public class KNN {
 		String mostCommonAttr = "";
 		String temp = "";
 		int biggestKey=0;
-		for (int i=1; i<rows; i++) {
+		for (int i=1; i<dataSet.length; i++) {
 			if(attributeSet.containsKey(dataSet[i][column])){
 				attributeSet.put(dataSet[i][column], attributeSet.get(dataSet[i][column]) + 1);
 			}
@@ -180,11 +197,11 @@ public class KNN {
 		return mostCommonAttr;
 
 	}
-
+	/*
 	//performed on 0,2,4,10,10,12
 	private void findMedian(int columnNum, String [][] dataSet){
 		ArrayList<Double> column = new ArrayList<Double>();
-		for (int j = 1; j < rows; j++){
+		for (int j = 1; j < dataSet.length; j++){
 					double number = Double.parseDouble(dataSet[j][columnNum]);
 				
 					System.out.println(number);
@@ -194,34 +211,34 @@ public class KNN {
             		
 		}
 		Collections.sort(column);
-		double median = column.get(rows/column.size());
+		double median = column.get(dataSet.length/column.size());
 		//System.out.println(list);
 		System.out.println(median);
 	}
-
+	*/
 	private double getMin(int columnNum, String [][] dataSet){
-
 		ArrayList<Double> column = new ArrayList<Double>();
-		for (int j = 1; j < rows; j++){
+		System.out.println(dataSet.length);
+		for (int j = 1; j < dataSet.length; j++){
 			double number = Double.parseDouble(dataSet[j][columnNum]);
 			
 			column.add(number);
 		}
 		Collections.sort(column);
-		System.out.println(column.get(0));
+		System.out.println("Min: " + column.get(0));
 
 		return column.get(0);
 	}
 
 	private double getMax(int columnNum, String [][] dataSet){
 		ArrayList<Double> column = new ArrayList<Double>();
-		for (int j = 1; j < rows; j++){
+		for (int j = 1; j < dataSet.length; j++){
 			double number = Double.parseDouble(dataSet[j][columnNum]);
 		
 			column.add(number);
 		}
 		Collections.sort(column);
-		System.out.println(column.get(column.size()-1));
+		System.out.println("Max: " + column.get(column.size()-1) + " at columnNum: " + columnNum);
 		return column.get(column.size()-1);
 
 	}
@@ -231,34 +248,71 @@ public class KNN {
 		double max = getMax(column, dataSet);
 		double normValue;
 		double originalValue;
-		
-		for(int i = 1; i <rows; i++){
+		double constant = 1;
+		if(min != max){
+		for(int i = 1; i <dataSet.length; i++){
 			originalValue = Double.parseDouble(dataSet[i][column]);
-			normValue = (originalValue - min)/(max - min);
+
+			normValue = Math.abs((originalValue - min)/(max - min));
+			
 			dataSet[i][column] = String.valueOf(normValue);
+			System.out.println("Normalised " + originalValue + " too " + dataSet[i][column]);
+		}
 		}
 	}
 
-	private void 
-	private double euclideanDistance(int row, String [][] p1, String[][] p2){
+	private void kayNN(int k, int row, String[][] record1, String[][] record2){
+		System.out.println("kayNN method:-----------------------");
+		//Map<Double, Integer> neighbours = new HashMap<Double, Integer>();
+		neighbours = new HashMap<Double, Integer>();
+		ArrayList<Double> neighbourDistances = new ArrayList<Double>();
+		//ArrayList<String> neighbourLabels = new ArrayList<String>();
+		
+		int nOfNeighbours = neighbourDistances.size();
+		for (int i = 1; i < record2.length; i++){
+			double distance = euclideanDistance(row, i, record1, record2);
+			if(neighbourDistances.size()<k){
+				neighbourDistances.add(distance);
+				neighbours.put(distance, i);
+				Collections.sort(neighbourDistances);
+			}	
+			else{
+				System.out.println("neighbourDistances is full: " + neighbourDistances.size());
+				System.out.println(distance + " < " + neighbourDistances.get(neighbourDistances.size()-1) );
+				if(distance < neighbourDistances.get(neighbourDistances.size()-1)){
+					
+					neighbours.remove(neighbourDistances.get(neighbourDistances.size()-1));
+					neighbours.put(distance, i);
+					neighbourDistances.remove(neighbourDistances.size()-1);
+					neighbourDistances.add(distance);
+					Collections.sort(neighbourDistances);
+				}
+			}
+		}
 
+		System.out.println("Distances list" + neighbourDistances);
+		System.out.println("neighbours list" + neighbours);
+	}
+
+	private double euclideanDistance(int row, int row2, String [][] testFold, String[][] trainingData){
+		System.out.println("Euclidean method: ---------------------- ");
 		double distance = 0;
 		for (int i = 0; i < 14; i++){
 			//System.out.println("Euclidean i " + i);
-			System.out.println("Euclidean p1" + p1[row][i]);
-			System.out.println("Euclidean p2" + p2[row+1][i]);
+			System.out.println("Euclidean p1: " + testFold[row][i]);
+			System.out.println("Euclidean p2: " + trainingData[row2][i]);
 			
 			try{
-				Double dp1 = Double.parseDouble(p1[row][i]);
-				Double dp2 = Double.parseDouble(p2[row+1][i]);
-				distance = distance + Math.pow(dp1- dp2, 2.0);
-				System.out.println(Math.pow(dp1- dp2, 2.0));
+				double dp1 = Double.parseDouble(testFold[row][i]);
+				double dp2 = Double.parseDouble(trainingData[row2][i]);
+				distance = distance + Math.pow(dp1 - dp2, 2.0);
+				System.out.println("numerical distance: " + Math.pow(dp1 - dp2, 2.0));
 			}
 			catch(Exception e){
 
-				if(p1[row][i].equals(p2[row+1][i])){
+				if(testFold[row][i].equals(trainingData[row2][i])){
 					distance++;
-					System.out.println("Equal: " );
+					System.out.println("String distance: " );
 				}
 			}
 		
@@ -321,8 +375,9 @@ public class KNN {
 				distance = distance + Math.pow(dp1- dp2, 2.0);
 			}
 				*/
+			System.out.println("euclideanDistance total: " + distance);
 		}
-	
+		System.out.println("euclideanDistance total: " + distance);
 		return distance;
 	}
 
@@ -331,7 +386,7 @@ public class KNN {
 		String[][] training_folds;
 
 
-		for (int i = 0; i < rows; i++){
+		for (int i = 0; i < dataSet.length; i++){
         		System.out.println("Data: " + i);
             	for (int j = 0; j < columns; j++){
             		System.out.println(dataSet[i][j]);
