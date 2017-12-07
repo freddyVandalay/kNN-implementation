@@ -12,6 +12,7 @@ public class KNN {
 	Scanner readFile;
 	String label;
 	int columns;
+	int maxRecords = 10;
 	//int rows;
 	//Path pathToFile;
 
@@ -48,8 +49,9 @@ public class KNN {
 		//System.out.println(trainingData[1][0]);
         //System.out.println(testData[1][0]);
         //System.out.println(trainingData[1][14]);
+		fiveCV(5,trainingData);
 
-        kayNN(9,5, testData, trainingData);
+        //kayNN(39,5, testData, trainingData);
         //double eu = euclideanDistance(1, trainingData,trainingData);
         //System.out.println(eu);
         //System.out.println(trainingData[1][4]);
@@ -88,14 +90,14 @@ public class KNN {
 	private String [][] buildDataMatrix(Scanner dataSet){
 		String [][] data = new String[0][0];
 		String [] row;
+		int loadedRecords = 0;
 		//rows = 0;
 		columns = 0;
 		String [][] tempData;
 		data = new String [data.length][columns];
-		int w = 0;
 		ArrayList<Integer> columnsWithMissingValues = new ArrayList<Integer>();
 
-		while(dataSet.hasNextLine() && w<50){
+		while(dataSet.hasNextLine() && loadedRecords<maxRecords){
 			//rows++;
 			//Set the num of columns for the matrix
 			row = dataSet.nextLine().split(",");
@@ -141,7 +143,7 @@ public class KNN {
         	}
         	*/
         	//System.out.println(rows);
-        		w++;
+        		loadedRecords++;
 		}
 		//System.out.println(columnsWithMissingValues);
 	
@@ -157,9 +159,9 @@ public class KNN {
 		    for(int k=1; k<dataSet.length;k++){
 		    	
         		if(dataSet[k][column].equals("?")){
-        				System.out.println("Before: " + dataSet[k][column]);
+        				//System.out.println("Before: " + dataSet[k][column]);
         				trainingData[k][column] = word;
-        				System.out.println("Replaced: " + dataSet[k][column] + " " + column + " " + k);
+        				//System.out.println("Replaced: " + dataSet[k][column] + " " + column + " " + k);
         			
         		}
         	}
@@ -218,14 +220,14 @@ public class KNN {
 	*/
 	private double getMin(int columnNum, String [][] dataSet){
 		ArrayList<Double> column = new ArrayList<Double>();
-		System.out.println(dataSet.length);
+		//System.out.println(dataSet.length);
 		for (int j = 1; j < dataSet.length; j++){
 			double number = Double.parseDouble(dataSet[j][columnNum]);
 			
 			column.add(number);
 		}
 		Collections.sort(column);
-		System.out.println("Min: " + column.get(0));
+		//System.out.println("Min: " + column.get(0));
 
 		return column.get(0);
 	}
@@ -238,7 +240,7 @@ public class KNN {
 			column.add(number);
 		}
 		Collections.sort(column);
-		System.out.println("Max: " + column.get(column.size()-1) + " at columnNum: " + columnNum);
+		//System.out.println("Max: " + column.get(column.size()-1) + " at columnNum: " + columnNum);
 		return column.get(column.size()-1);
 
 	}
@@ -256,16 +258,16 @@ public class KNN {
 			normValue = Math.abs((originalValue - min)/(max - min));
 			
 			dataSet[i][column] = String.valueOf(normValue);
-			System.out.println("Normalised " + originalValue + " too " + dataSet[i][column]);
+			//System.out.println("Normalised " + originalValue + " too " + dataSet[i][column]);
 		}
 		}
 	}
 
-	private void kayNN(int k, int row, String[][] record1, String[][] record2){
-		System.out.println("kayNN method:-----------------------");
+	private String kayNN(int k, int row, String[][] record1, String[][] record2){
+		//System.out.println("kayNN method:-----------------------");
 		//Map<Double, Integer> neighbours = new HashMap<Double, Integer>();
 		neighbours = new HashMap<Double, Integer>();
-		Map<String, Integer> predictedEarnings = new HashMap<String, Integer>();
+		
 		ArrayList<Double> neighbourDistances = new ArrayList<Double>();
 		//ArrayList<String> neighbourLabels = new ArrayList<String>();
 		
@@ -278,8 +280,8 @@ public class KNN {
 				Collections.sort(neighbourDistances);
 			}	
 			else{
-				System.out.println("neighbourDistances is full: " + neighbourDistances.size());
-				System.out.println(distance + " < " + neighbourDistances.get(neighbourDistances.size()-1) );
+				//System.out.println("neighbourDistances is full: " + neighbourDistances.size());
+				//System.out.println(distance + " < " + neighbourDistances.get(neighbourDistances.size()-1) );
 				if(distance < neighbourDistances.get(neighbourDistances.size()-1)){
 					
 					neighbours.remove(neighbourDistances.get(neighbourDistances.size()-1));
@@ -291,130 +293,114 @@ public class KNN {
 			}
 		}
 
-		System.out.println("Distances list" + neighbourDistances);
-		System.out.println("neighbours list" + neighbours);
-		System.out.println("neighbours index" + neighbours.get(neighbourDistances.get(neighbourDistances.size()-1)));
-		System.out.println(neighbours.values());
+		//System.out.println("Distances list" + neighbourDistances);
+		//System.out.println("neighbours list" + neighbours);
+		//System.out.println("neighbours index" + neighbours.get(neighbourDistances.get(neighbourDistances.size()-1)));
+		//System.out.println(neighbours.values());
+		
+		return labelMaker(row, neighbours.values());
+
+	}
+
+	private String labelMaker(int row ,Collection indices){
+		HashMap<String, Integer> predictedEarnings = new HashMap<String, Integer>();
+		ArrayList<String> label = new ArrayList<String>();
 		Iterator <Integer> iterator = neighbours.values().iterator();
+		String prediction = "";
 		//System.out.println(trainingData[1][14]);
 		while(iterator.hasNext()){
 			//System.out.println(iterator.next());
 			int index = iterator.next();
 		
-			String prediction = trainingData[index][14];
+			prediction = trainingData[index][14];
 			
 			if(!predictedEarnings.containsKey(prediction)){
 				predictedEarnings.put(trainingData[index][14], 1);
 			}
 			else{
 				predictedEarnings.put(trainingData[index][14], predictedEarnings.get(trainingData[index][14]) + 1 );
+				label.add(trainingData[index][14]);
 			}
 			
 			
 		}
-		System.out.println(predictedEarnings);
 
+		int maxValue = Collections.max(predictedEarnings.values());
+
+		for(int j = 0; j<label.size(); j++){
+			if (predictedEarnings.get(label.get(j)) == maxValue ){
+				prediction = label.get(j);
+			}	
+		}
+		//System.out.println(predictedEarnings);
+		//System.out.println(maxValue);
+		//System.out.println("Record is: " + trainingData[row][14] + " AGE: " + trainingData[row][8] + " Row: " + row + " " +  "predictied: " + prediction);
+
+		return prediction;
 	}
-
 	private double euclideanDistance(int row, int row2, String [][] testFold, String[][] trainingData){
-		System.out.println("Euclidean method: ---------------------- ");
+		//System.out.println("Euclidean method: ---------------------- ");
 		double distance = 0;
 		for (int i = 0; i < 14; i++){
 			//System.out.println("Euclidean i " + i);
-			System.out.println("Euclidean p1: " + testFold[row][i]);
-			System.out.println("Euclidean p2: " + trainingData[row2][i]);
+			//System.out.println("Euclidean p1: " + testFold[row][i]);
+			//System.out.println("Euclidean p2: " + trainingData[row2][i]);
 			
 			try{
 				double dp1 = Double.parseDouble(testFold[row][i]);
 				double dp2 = Double.parseDouble(trainingData[row2][i]);
 				distance = distance + Math.pow(dp1 - dp2, 2.0);
-				System.out.println("numerical distance: " + Math.pow(dp1 - dp2, 2.0));
+				//System.out.println("numerical distance: " + Math.pow(dp1 - dp2, 2.0));
 			}
 			catch(Exception e){
 
 				if(testFold[row][i].equals(trainingData[row2][i])){
 					distance++;
-					System.out.println("String distance: " );
+					//System.out.println("String distance: " );
 				}
 			}
-		
-			
-		
-			
-			/*
-			if(i == 1 && p1[row][i].equals(p2[row+1][i])){
-				distance++;
-			}
-			else if(i == 2){
-				double dp1 = Double.parseDouble(p1[row][i]);
-				double dp2 = Double.parseDouble(p2[row+1][i]);
-				distance = distance + Math.pow(dp1- dp2, 2.0);
-			}
-			else if(i == 3 && p1[row][i].equals(p2[row+1][i])){
-				distance++;
-			}
-			else if(i == 4){
-				double dp1 = Double.parseDouble(p1[row][i]);
-				double dp2 = Double.parseDouble(p2[row+1][i]);
-				distance = distance + Math.pow(dp1- dp2, 2.0);
-			}
-			else if(i == 5 && p1[row][i].equals(p2[row+1][i])){
-				distance++;
-			}
-			else if(i == 6 && p1[row][i].equals(p2[row+1][i])){
-				distance++;
-			}
-			else if(i == 7 && p1[row][i].equals(p2[row+1][i])){
-				distance++;
-			}
-			else if(i == 8 && p1[row][i].equals(p2[row+1][i])){
-				distance++;
-			}
-			else if(i == 9 && p1[row][i].equals(p2[row+1][i])){
-				distance++;
-			}
-			else if(i == 10){
-				double dp1 = Double.parseDouble(p1[row][i]);
-				double dp2 = Double.parseDouble(p2[row+1][i]);
-				distance = distance + Math.pow(dp1- dp2, 2.0);
-			}
-			else if(i == 11){
-				double dp1 = Double.parseDouble(p1[row][i]);
-				double dp2 = Double.parseDouble(p2[row+1][i]);
-				distance = distance + Math.pow(dp1- dp2, 2.0);
-			}
-			else if(i == 12){
-				double dp1 = Double.parseDouble(p1[row][i]);
-				double dp2 = Double.parseDouble(p2[row+1][i]);
-				distance = distance + Math.pow(dp1- dp2, 2.0);	
-			}
-			else if(i == 13 && p1[row][i].equals(p2[row+1][i])){
-				distance++;
-			}
-			else {
-				double dp1 = Double.parseDouble(p1[row][i]);
-				double dp2 = Double.parseDouble(p2[row+1][i]);
-				distance = distance + Math.pow(dp1- dp2, 2.0);
-			}
-				*/
-			System.out.println("euclideanDistance total: " + distance);
 		}
-		System.out.println("euclideanDistance total: " + distance);
+		
 		return distance;
 	}
 
-	private void fiveCV(String [][] dataSet){
-		String[][] current_fold;
-		String[][] training_folds;
+	private void fiveCV(int folds, String [][] dataSet){
+		ArrayList<Integer> current_fold;
+		ArrayList<Double> k_accuracy;
+		ArrayList<Integer> valuesOf_k = new ArrayList<Integer>();
+		//int predictedRight = 0;
+		for(int i = 1; i<10; i= i+2){
+			valuesOf_k.add(i);
+		}
+		
+		Iterator <Integer> k_iterator = valuesOf_k.iterator();
 
+		while(k_iterator.hasNext()){
+			int k = k_iterator.next();
+			for(int fold=1; fold <= folds; fold++){
+				current_fold = new ArrayList<Integer>();
+				for (int i = 1; i < dataSet.length; i++){
+					if(dataSet[i][15].equals(Integer.toString(fold))){
+						current_fold.add(i);
+					}
+				}
+				//System.out.println("Fold length: " + current_fold.size() + " FOLD COUNT: " + fold);
+				Iterator <Integer> iterator = current_fold.iterator();
 
-		for (int i = 0; i < dataSet.length; i++){
-        		System.out.println("Data: " + i);
-            	for (int j = 0; j < columns; j++){
-            		System.out.println(dataSet[i][j]);
-            	}
-        	}
+			
+				while(iterator.hasNext() && current_fold.size() != 0){
+					int x = iterator.next();
+					//System.out.println("Iterator input" + x);
+					//kayNN(k ,x, dataSet, dataSet);
+					if(dataSet[x][14].equals(kayNN(k ,x, dataSet, dataSet))){
+					System.out.println("YOure the best");
+					}
+				}
+			}
+		}
+
 	}
+
 
 	public static void main(String args[]){
 		new KNN();	
