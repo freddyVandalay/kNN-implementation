@@ -12,25 +12,32 @@ public class KNN {
 	Scanner readFile;
 	String label;
 	int columns;
-	int maxRecords = 200;
+	int maxRecords=100;
 	//int rows;
 	//Path pathToFile;
 
 	Map<Double, Integer> neighbours;
 
 	public KNN(){
-		setLabel("earns");
-
+		long startTime = System.currentTimeMillis();
+		System.out.println("Importing dataset trainingData...please wait");
 		trainingData = importData("adult.train.5fold.csv");
-		testData = importData("adult.test.csv");
+		System.out.println("Imported dataset trainingData");
+		
+		//testData = importData("adult.test.csv");
+		//System.out.println("Imported dataset testData");
+		System.out.println("Replacing replaceMissingValues...please wait");
 		replaceMissingValues(1,trainingData);
 		replaceMissingValues(6,trainingData);
 		replaceMissingValues(13,trainingData);
-		
+		System.out.println("replaceMissingValues on trainingData DONE");
+		/*
 		replaceMissingValues(1,testData);
 		replaceMissingValues(6,testData);
 		replaceMissingValues(13,testData);
-		
+		*/
+
+		System.out.println("Normalising data...please wait");
 		//0,2,4,10,10,12
 		normalise(0,trainingData);
 		normalise(2,trainingData);
@@ -38,19 +45,26 @@ public class KNN {
 		normalise(10,trainingData);
 		normalise(11,trainingData);
 		normalise(12,trainingData);
-		
+		System.out.println("Normalised attributes on trainingData DONE");
+		long currentTime   = System.currentTimeMillis();
+		double formattingTime = (double)(currentTime - startTime)/1000;
+		System.out.println("Formatting completed in: " + formattingTime);
+		/*
+		/*
 		normalise(0,testData);
 		normalise(2,testData);
 		normalise(4,testData);
 		normalise(10,testData);
 		normalise(11,testData);
 		normalise(12,testData);
-	
-		//System.out.println(trainingData[1][0]);
+		*/
+
+		//System.out.println("Data format done.");
         //System.out.println(testData[1][0]);
         //System.out.println(trainingData[1][14]);
+		System.out.println("Cross validation in progress...please wait");
 		fiveCV(5,trainingData);
-
+		System.out.println("Cross validation completed!");
         //kayNN(39,5, testData, trainingData);
         //double eu = euclideanDistance(1, trainingData,trainingData);
         //System.out.println(eu);
@@ -62,7 +76,10 @@ public class KNN {
 		//replaceMissingValues(6,testData);
 		//replaceMissingValues(13,testData);
 		//findMedian(2, trainingData);
-		System.out.println("Done");
+		long endTime   = System.currentTimeMillis();
+		double totalTime = (double)(endTime - startTime)/1000;
+		System.out.println("Mining Done");
+		System.out.println("Mining completed in: " + totalTime);
 	}
 
 
@@ -123,12 +140,14 @@ public class KNN {
         	for(int k=0; k<columns;k++){
         		tempData[data.length][k]=row[k].replaceAll("\\s","");//Ignores whitespace
         		//System.out.println("Added data to temp: " + tempData[data.length][k]);
+        		/*
         		if(tempData[data.length][k].equals("?")){
         			if(!columnsWithMissingValues.contains(k)){
         				columnsWithMissingValues.add(k);
         				//System.out.println("Missing value on column: " + k);
         			}
         		}
+        		*/
         	}
         	
         	//set new data set variable
@@ -146,7 +165,7 @@ public class KNN {
         		loadedRecords++;
 		}
 		//System.out.println(columnsWithMissingValues);
-	
+
 		return data;
 	}
 
@@ -407,6 +426,7 @@ public class KNN {
 			}
 			accuracy=predictedRight/dataSet.length;
 			k_accuracy.add(accuracy);
+			System.out.println("Accuracy: " + accuracy);
 		}
 		System.out.println(k_accuracy);
 	}
