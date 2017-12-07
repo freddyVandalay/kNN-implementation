@@ -47,9 +47,9 @@ public class KNN {
 	
 		//System.out.println(trainingData[1][0]);
         //System.out.println(testData[1][0]);
-        //System.out.println(trainingData[1][4]);
+        //System.out.println(trainingData[1][14]);
 
-        kayNN(3,1, testData, trainingData);
+        kayNN(9,5, testData, trainingData);
         //double eu = euclideanDistance(1, trainingData,trainingData);
         //System.out.println(eu);
         //System.out.println(trainingData[1][4]);
@@ -95,7 +95,7 @@ public class KNN {
 		int w = 0;
 		ArrayList<Integer> columnsWithMissingValues = new ArrayList<Integer>();
 
-		while(dataSet.hasNextLine() && w<5){
+		while(dataSet.hasNextLine() && w<50){
 			//rows++;
 			//Set the num of columns for the matrix
 			row = dataSet.nextLine().split(",");
@@ -265,6 +265,7 @@ public class KNN {
 		System.out.println("kayNN method:-----------------------");
 		//Map<Double, Integer> neighbours = new HashMap<Double, Integer>();
 		neighbours = new HashMap<Double, Integer>();
+		Map<String, Integer> predictedEarnings = new HashMap<String, Integer>();
 		ArrayList<Double> neighbourDistances = new ArrayList<Double>();
 		//ArrayList<String> neighbourLabels = new ArrayList<String>();
 		
@@ -292,6 +293,27 @@ public class KNN {
 
 		System.out.println("Distances list" + neighbourDistances);
 		System.out.println("neighbours list" + neighbours);
+		System.out.println("neighbours index" + neighbours.get(neighbourDistances.get(neighbourDistances.size()-1)));
+		System.out.println(neighbours.values());
+		Iterator <Integer> iterator = neighbours.values().iterator();
+		//System.out.println(trainingData[1][14]);
+		while(iterator.hasNext()){
+			//System.out.println(iterator.next());
+			int index = iterator.next();
+		
+			String prediction = trainingData[index][14];
+			
+			if(!predictedEarnings.containsKey(prediction)){
+				predictedEarnings.put(trainingData[index][14], 1);
+			}
+			else{
+				predictedEarnings.put(trainingData[index][14], predictedEarnings.get(trainingData[index][14]) + 1 );
+			}
+			
+			
+		}
+		System.out.println(predictedEarnings);
+
 	}
 
 	private double euclideanDistance(int row, int row2, String [][] testFold, String[][] trainingData){
