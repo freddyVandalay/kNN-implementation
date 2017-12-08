@@ -1,15 +1,18 @@
 import java.util.*; 
 import java.util.Scanner;
-import java.io.BufferedReader;
+//import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.File;
+import java.io.FileWriter;
 
 public class KNN {
 	File file;
+	File output;
 	String [][] trainingData;
 	String [][] testData;
 
 	Scanner readFile;
+	FileWriter writer;
 	String label;
 	int columns;
 	int maxRecords=50;
@@ -103,6 +106,8 @@ public class KNN {
 		label = "";
 	}
 
+
+
 	private String [][] buildDataMatrix(Scanner dataSet){
 		String [][] data = new String[0][0];
 		String [] row;
@@ -183,10 +188,6 @@ public class KNN {
         			
         		}
         	}
-	}
-
-	private void formatData(){
-
 	}
 
 	//performed on 1,3,5,6,7,8,9 and 13
@@ -434,8 +435,52 @@ public class KNN {
 		int bestKay = valuesOf_k.get(ind);
 		System.out.println(k_accuracy);
 		System.out.println("K: " + bestKay + " accuracy: " + maxi);
+		writeToFile(valuesOf_k, k_accuracy, maxi, bestKay);
 	}
 
+	private void writeToFile(ArrayList<Integer> ks, ArrayList<Double> accuracy_list, double bestAccuracy, int bestK){
+		output = new File("grid.results.txt");
+		
+		try{
+			output.createNewFile();
+			writer = new FileWriter(output);
+			writer.write("Performance: 5 Cross validation ");
+			writer.write("\r\n");
+			writer.write("    K   |   A   ");
+			writer.write("\r\n");
+			for(int i = 0; i<ks.size()-1; i++){
+				//for(int j = 0; j<1; j ++){
+				//String.format("%8s", ks.get(i).toString()).replace(' ', '0');
+				writer.write(" | ");
+				writer.write(String.format("%4s", ks.get(i).toString()).replace(' ', ' '));
+				writer.write(" | ");
+				writer.write(String.format("%4s", accuracy_list.get(i).toString()).replace(' ', ' '));
+				//writer.write(accuracy_list.get(i).toString());
+				writer.write(" | ");
+				
+				//}
+				writer.write("\r\n");
+
+			}
+			
+			writer.write("\r\n");
+			writer.write("Best K/A: ");
+			writer.write(String.valueOf(bestK));
+			writer.write("/");
+			writer.write(String.valueOf(bestAccuracy));
+			writer.write("\r\n");
+			writer.write("K = value of K");
+			writer.write("\r\n");
+			writer.write("A = accuracy");
+			writer.flush();
+      		writer.close();
+		}
+		catch(Exception e){
+			System.out.println("Output error: " + e);
+		}
+
+
+	}
 	private int getBestK(ArrayList<Double> list_K){
 
 		int best_k = 0;
