@@ -12,9 +12,8 @@ public class KNN {
 	Scanner readFile;
 	String label;
 	int columns;
-	int maxRecords=100;
-	//int rows;
-	//Path pathToFile;
+	int maxRecords=50;
+
 
 	Map<Double, Integer> neighbours;
 
@@ -428,9 +427,20 @@ public class KNN {
 			k_accuracy.add(accuracy);
 			System.out.println("Accuracy: " + accuracy);
 		}
+
+		//Get best k
+		double maxi = Collections.max(k_accuracy);
+		int ind = k_accuracy.indexOf(maxi);
+		int bestKay = valuesOf_k.get(ind);
 		System.out.println(k_accuracy);
+		System.out.println("K: " + bestKay + " accuracy: " + maxi);
 	}
 
+	private int getBestK(ArrayList<Double> list_K){
+
+		int best_k = 0;
+		return best_k;
+	}
 
 	public static void main(String args[]){
 		new KNN();	
