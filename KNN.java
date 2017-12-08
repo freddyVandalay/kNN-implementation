@@ -19,11 +19,13 @@ public class KNN {
 	String label;
 	int columns;
 	int maxRecords=50;
-
-	int tp = 0; //true positive
-	int tn = 0; //true negative
-	int fp = 0; //false positive
-	int fn = 0; //false negatie
+	int recommended_k;
+	double tp = 0; //true positive
+	double tn = 0; //true negative
+	double fp = 0; //false positive
+	double fn = 0; //false negatie
+	double precision = 0;
+	double recall = 0;
 
 	Map<Double, Integer> neighbours;
 
@@ -35,18 +37,14 @@ public class KNN {
 		trainingData = importData("adult.train.5fold.csv");
 		System.out.println("Imported dataset trainingData");
 		
-		//testData = importData("adult.test.csv");
+		
 		//System.out.println("Imported dataset testData");
 		System.out.println("Replacing replaceMissingValues...please wait");
 		replaceMissingValues(1,trainingData);
 		replaceMissingValues(6,trainingData);
 		replaceMissingValues(13,trainingData);
 		System.out.println("replaceMissingValues on trainingData DONE");
-		/*
-		replaceMissingValues(1,testData);
-		replaceMissingValues(6,testData);
-		replaceMissingValues(13,testData);
-		*/
+
 
 		System.out.println("Normalising data...please wait");
 		//0,2,4,10,10,12
@@ -60,15 +58,8 @@ public class KNN {
 		long currentTime   = System.currentTimeMillis();
 		double formattingTime = (double)(currentTime - startTime)/1000;
 		System.out.println("Formatting completed in: " + formattingTime);
-		/*
-		/*
-		normalise(0,testData);
-		normalise(2,testData);
-		normalise(4,testData);
-		normalise(10,testData);
-		normalise(11,testData);
-		normalise(12,testData);
-		*/
+		
+
 
 		//System.out.println("Data format done.");
         //System.out.println(testData[1][0]);
@@ -87,12 +78,37 @@ public class KNN {
 		//replaceMissingValues(6,testData);
 		//replaceMissingValues(13,testData);
 		//findMedian(2, trainingData);
+		
 		long endTime   = System.currentTimeMillis();
 		double totalTime = (double)(endTime - startTime)/1000;
-		System.out.println("Mining Done");
-		System.out.println("Mining completed in: " + totalTime);
+		System.out.println("Cross validation completed in: " + totalTime);
 
+		System.out.println("Importing test data...please wait");
+		testData = importData("adult.test.csv");
+		System.out.println("Imported test data");
+		
+		System.out.println("Replacing replaceMissingValues...please wait");		
+		replaceMissingValues(1,testData);
+		replaceMissingValues(6,testData);
+		replaceMissingValues(13,testData);
+		System.out.println("replaceMissingValues on testData DONE");
+
+		System.out.println("Normalising data...please wait");
+		normalise(0,testData);
+		normalise(2,testData);
+		normalise(4,testData);
+		normalise(10,testData);
+		normalise(11,testData);
+		normalise(12,testData);
+		System.out.println("Normalised attributes on trainingData DONE");
+
+		knnModel(testData, trainingData, recommended_k);
 		printConfusionMatrix();
+		precision = calculatePrecision();
+		System.out.println("Precision: " + precision);
+
+		recall = calculateRecall();
+		System.out.println("Recall: " + recall);
 	}
 
 
@@ -294,7 +310,7 @@ public class KNN {
 		}
 	}
 
-	private String kayNN(int k, int row, String[][] record1, String[][] record2){
+	private String kayNN(int k, int row, String[][] testData, String[][] trainingData){
 		//System.out.println("kayNN method:-----------------------");
 		//Map<Double, Integer> neighbours = new HashMap<Double, Integer>();
 		neighbours = new HashMap<Double, Integer>();
@@ -303,8 +319,8 @@ public class KNN {
 		//ArrayList<String> neighbourLabels = new ArrayList<String>();
 		
 		int nOfNeighbours = neighbourDistances.size();
-		for (int i = 1; i < record2.length; i++){
-			double distance = euclideanDistance(row, i, record1, record2);
+		for (int i = 1; i < trainingData.length; i++){
+			double distance = euclideanDistance(row, i, testData, trainingData);
 			if(neighbourDistances.size()<k){
 				neighbourDistances.add(distance);
 				neighbours.put(distance, i);
@@ -433,11 +449,11 @@ public class KNN {
 					//kayNN(k ,x, dataSet, dataSet);
 					if(dataSet[x][14].equals(kayNN(k ,x, dataSet, dataSet))){
 						predictedRight++;
-						confusionMatrix(kayNN(k ,x, dataSet, dataSet), dataSet[x][14]);
+						//confusionMatrix(kayNN(k ,x, dataSet, dataSet), dataSet[x][14]);
 						//System.out.println("You're the best");
 					}
 					else{
-						confusionMatrix(kayNN(k ,x, dataSet, dataSet), dataSet[x][14]);
+						//confusionMatrix(kayNN(k ,x, dataSet, dataSet), dataSet[x][14]);
 						//System.out.println("Wrong");
 					}
 				}
@@ -454,6 +470,7 @@ public class KNN {
 		System.out.println(k_accuracy);
 		System.out.println("K: " + bestKay + " accuracy: " + maxi);
 		writeToFile(valuesOf_k, k_accuracy, maxi, bestKay);
+		recommended_k = bestKay;
 	}
 
 	private void confusionMatrix(String predicted, String actual){
@@ -479,7 +496,8 @@ public class KNN {
 	}
 
 	private void printConfusionMatrix(){
-		
+	
+		//System.out.println("TP: " + precision);
 		String truePos = String.format("%2s", tp).replace(' ', ' ');
 		String falsePos = String.format("%2s", fp).replace(' ', ' ');
 		String trueNeg = String.format("%2s", tn).replace(' ', ' ');
@@ -493,17 +511,13 @@ public class KNN {
 		System.out.print(String.format("%4s", falseNeg).replace(' ', ' '));
 		System.out.print(" |");
 		System.out.println(String.format("%4s", trueNeg).replace(' ', ' '));
+	}
 
-		//String.format("%4s", string1).replace(' ', ' ');
-		//String.format("%4s", string2).replace(' ', ' ');
-		/*
-		for(int i = 0; i<2; i++){
-			for(int j = 0; j<2; j++){
-					System.out.println(tp);
-			}
-		}
-		*/
-	
+	private double calculatePrecision(){
+		return tp/(tp+fp);
+	}
+	private double calculateRecall(){
+		return tp/(tp+fn);
 	}
 
 	//Writes accuracy to file
@@ -549,6 +563,14 @@ public class KNN {
 		}
 
 
+	}
+
+	private void knnModel(String[][] testData, String [][] trainingData, int k){
+		for(int i = 1; i<testData.length;i++){
+			for(int j = 1; j<trainingData.length; j++){
+				kayNN(k, i, testData, trainingData);
+			}
+		}
 	}
 
 	public static void main(String args[]){
