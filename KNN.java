@@ -18,7 +18,7 @@ public class KNN {
 	FileWriter writer;
 	String label;
 	int columns;
-	int maxRecords=50;
+	int maxRecords=1000;
 	int recommended_k;
 	double tp = 0; //true positive
 	double tn = 0; //true negative
@@ -82,7 +82,7 @@ public class KNN {
 		long endTime   = System.currentTimeMillis();
 		double totalTime = (double)(endTime - startTime)/1000;
 		System.out.println("Cross validation completed in: " + totalTime);
-
+		/*
 		System.out.println("Importing test data...please wait");
 		testData = importData("adult.test.csv");
 		System.out.println("Imported test data");
@@ -103,12 +103,15 @@ public class KNN {
 		System.out.println("Normalised attributes on trainingData DONE");
 
 		knnModel(testData, trainingData, recommended_k);
+		
+
 		printConfusionMatrix();
 		precision = calculatePrecision();
 		System.out.println("Precision: " + precision);
 
 		recall = calculateRecall();
 		System.out.println("Recall: " + recall);
+		*/
 	}
 
 
@@ -310,7 +313,7 @@ public class KNN {
 		}
 	}
 
-	private String kayNN(int k, int row, String[][] testData, String[][] trainingData){
+	private String kayNN(int k, int row, String[][] testData, String[][] trainingData, Iterator <Integer> iterator){
 		//System.out.println("kayNN method:-----------------------");
 		//Map<Double, Integer> neighbours = new HashMap<Double, Integer>();
 		neighbours = new HashMap<Double, Integer>();
@@ -319,20 +322,25 @@ public class KNN {
 		//ArrayList<String> neighbourLabels = new ArrayList<String>();
 		
 		int nOfNeighbours = neighbourDistances.size();
-		for (int i = 1; i < trainingData.length; i++){
-			double distance = euclideanDistance(row, i, testData, trainingData);
+		//for (int i = 1; i < trainingData.length; i++){
+		while(iterator.hasNext()){
+			//System.out.println("Inside iterator");
+			int currentIndex = iterator.next();
+			//System.out.println(currentIndex);
+			double distance = euclideanDistance(row, currentIndex, testData, trainingData);
+			
 			if(neighbourDistances.size()<k){
 				neighbourDistances.add(distance);
-				neighbours.put(distance, i);
+				neighbours.put(distance, currentIndex);
 				Collections.sort(neighbourDistances);
 			}	
 			else{
 				//System.out.println("neighbourDistances is full: " + neighbourDistances.size());
 				//System.out.println(distance + " < " + neighbourDistances.get(neighbourDistances.size()-1) );
 				if(distance < neighbourDistances.get(neighbourDistances.size()-1)){
-					
+					//System.out.println("Adding" + distance + " and " + currentIndex);
 					neighbours.remove(neighbourDistances.get(neighbourDistances.size()-1));
-					neighbours.put(distance, i);
+					neighbours.put(distance, currentIndex);
 					neighbourDistances.remove(neighbourDistances.size()-1);
 					neighbourDistances.add(distance);
 					Collections.sort(neighbourDistances);
@@ -344,12 +352,13 @@ public class KNN {
 		//System.out.println("neighbours list" + neighbours);
 		//System.out.println("neighbours index" + neighbours.get(neighbourDistances.get(neighbourDistances.size()-1)));
 		//System.out.println(neighbours.values());
-		
+		//System.out.println(neighbours.values());
 		return labelMaker(row, neighbours.values());
 
 	}
 
 	private String labelMaker(int row ,Collection indices){
+		//System.out.println("labelMaker");
 		HashMap<String, Integer> predictedEarnings = new HashMap<String, Integer>();
 		ArrayList<String> label = new ArrayList<String>();
 		Iterator <Integer> iterator = neighbours.values().iterator();
@@ -413,6 +422,7 @@ public class KNN {
 
 	private void fiveCV(int folds, String [][] dataSet){
 		ArrayList<Integer> current_fold;
+		ArrayList<Integer> training_fold;
 		ArrayList<Double> k_accuracy = new ArrayList<Double>();
 		ArrayList<Integer> valuesOf_k = new ArrayList<Integer>();
 		double predictedRight = 0;
@@ -432,22 +442,31 @@ public class KNN {
 			accuracy=0;
 
 			for(int fold=1; fold <= folds; fold++){
+				System.out.println(" FOLD: " + fold);
 				current_fold = new ArrayList<Integer>();
+				training_fold = new ArrayList<Integer>();
 				for (int i = 1; i < dataSet.length; i++){
 					if(dataSet[i][15].equals(Integer.toString(fold))){
 						current_fold.add(i);
 					}
+					else{
+						training_fold.add(i);
+					}
 				}
-				System.out.println("Fold " + fold + " length: " + current_fold.size());
-				
-				Iterator <Integer> iterator = current_fold.iterator();
 
+				//System.out.println("Fold " + fold + " length: " + current_fold.size());
+				//System.out.println("Fold " + fold + " length: " + current_fold);
+				//System.out.println("Fold " + fold + " length: " + training_fold.size());
+				//System.out.println("Fold " + fold + " length: " + training_fold);
+				Iterator <Integer> iterator = current_fold.iterator();
+				
 			
 				while(iterator.hasNext() && current_fold.size() != 0){
-					int x = iterator.next();
+					Iterator <Integer> iterator2 = training_fold.iterator();
+					int testRow = iterator.next();
 					//System.out.println("Iterator input" + x);
 					//kayNN(k ,x, dataSet, dataSet);
-					if(dataSet[x][14].equals(kayNN(k ,x, dataSet, dataSet))){
+					if(dataSet[testRow][14].equals(kayNN(k ,testRow, dataSet, dataSet, iterator2))){
 						predictedRight++;
 						//confusionMatrix(kayNN(k ,x, dataSet, dataSet), dataSet[x][14]);
 						//System.out.println("You're the best");
@@ -568,7 +587,7 @@ public class KNN {
 	private void knnModel(String[][] testData, String [][] trainingData, int k){
 		for(int i = 1; i<testData.length;i++){
 			for(int j = 1; j<trainingData.length; j++){
-				kayNN(k, i, testData, trainingData);
+				//kayNN(k, i, testData, trainingData);
 			}
 		}
 	}
