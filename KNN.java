@@ -8,8 +8,11 @@ import java.io.FileWriter;
 public class KNN {
 	File file;
 	File output;
+
+	//Matrices that stores the different dataSets
 	String [][] trainingData;
 	String [][] testData;
+	String classifier = "<=50K";
 
 	Scanner readFile;
 	FileWriter writer;
@@ -17,10 +20,16 @@ public class KNN {
 	int columns;
 	int maxRecords=50;
 
+	int tp = 0; //true positive
+	int tn = 0; //true negative
+	int fp = 0; //false positive
+	int fn = 0; //false negatie
 
 	Map<Double, Integer> neighbours;
 
 	public KNN(){
+
+
 		long startTime = System.currentTimeMillis();
 		System.out.println("Importing dataset trainingData...please wait");
 		trainingData = importData("adult.train.5fold.csv");
@@ -82,6 +91,8 @@ public class KNN {
 		double totalTime = (double)(endTime - startTime)/1000;
 		System.out.println("Mining Done");
 		System.out.println("Mining completed in: " + totalTime);
+
+		printConfusionMatrix();
 	}
 
 
@@ -237,6 +248,7 @@ public class KNN {
 		System.out.println(median);
 	}
 	*/
+
 	private double getMin(int columnNum, String [][] dataSet){
 		ArrayList<Double> column = new ArrayList<Double>();
 		//System.out.println(dataSet.length);
@@ -389,6 +401,7 @@ public class KNN {
 		ArrayList<Integer> valuesOf_k = new ArrayList<Integer>();
 		double predictedRight = 0;
 		double accuracy;
+		
 		for(int i = 1; i<40; i= i+2){
 			valuesOf_k.add(i);
 		}
@@ -398,8 +411,10 @@ public class KNN {
 		while(k_iterator.hasNext()){
 			int k = k_iterator.next();
 			System.out.println("K is: " + k);
+			
 			predictedRight=0;
 			accuracy=0;
+
 			for(int fold=1; fold <= folds; fold++){
 				current_fold = new ArrayList<Integer>();
 				for (int i = 1; i < dataSet.length; i++){
@@ -408,6 +423,7 @@ public class KNN {
 					}
 				}
 				System.out.println("Fold " + fold + " length: " + current_fold.size());
+				
 				Iterator <Integer> iterator = current_fold.iterator();
 
 			
@@ -417,9 +433,11 @@ public class KNN {
 					//kayNN(k ,x, dataSet, dataSet);
 					if(dataSet[x][14].equals(kayNN(k ,x, dataSet, dataSet))){
 						predictedRight++;
+						confusionMatrix(kayNN(k ,x, dataSet, dataSet), dataSet[x][14]);
 						//System.out.println("You're the best");
 					}
 					else{
+						confusionMatrix(kayNN(k ,x, dataSet, dataSet), dataSet[x][14]);
 						//System.out.println("Wrong");
 					}
 				}
@@ -438,6 +456,57 @@ public class KNN {
 		writeToFile(valuesOf_k, k_accuracy, maxi, bestKay);
 	}
 
+	private void confusionMatrix(String predicted, String actual){
+
+
+		if(predicted.equals(classifier)){
+			if(predicted.equals(actual)){
+				tp++;
+			}
+			else{
+				fp++;
+			}
+		}
+		else{
+			if(predicted.equals(actual)){
+				tn++;
+			}
+			else{
+				fn++;
+			}
+		}
+
+	}
+
+	private void printConfusionMatrix(){
+		
+		String truePos = String.format("%2s", tp).replace(' ', ' ');
+		String falsePos = String.format("%2s", fp).replace(' ', ' ');
+		String trueNeg = String.format("%2s", tn).replace(' ', ' ');
+		String falseNeg  = String.format("%2s", fn).replace(' ', ' ');
+
+		System.out.println();
+		System.out.println("Confusion Matrix");
+		System.out.print(String.format("%4s", truePos).replace(' ', ' '));
+		System.out.print(" |");
+		System.out.println(String.format("%4s", falsePos).replace(' ', ' '));
+		System.out.print(String.format("%4s", falseNeg).replace(' ', ' '));
+		System.out.print(" |");
+		System.out.println(String.format("%4s", trueNeg).replace(' ', ' '));
+
+		//String.format("%4s", string1).replace(' ', ' ');
+		//String.format("%4s", string2).replace(' ', ' ');
+		/*
+		for(int i = 0; i<2; i++){
+			for(int j = 0; j<2; j++){
+					System.out.println(tp);
+			}
+		}
+		*/
+	
+	}
+
+	//Writes accuracy to file
 	private void writeToFile(ArrayList<Integer> ks, ArrayList<Double> accuracy_list, double bestAccuracy, int bestK){
 		output = new File("grid.results.txt");
 		
@@ -480,11 +549,6 @@ public class KNN {
 		}
 
 
-	}
-	private int getBestK(ArrayList<Double> list_K){
-
-		int best_k = 0;
-		return best_k;
 	}
 
 	public static void main(String args[]){
