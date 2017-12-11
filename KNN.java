@@ -12,14 +12,19 @@ public class KNN {
 	//Matrices that stores the different dataSets
 	String [][] trainingData;
 	String [][] testData;
+
 	String classifier = "<=50K";
 
 	Scanner readFile;
 	FileWriter writer;
-	String label;
+	
 	int columns;
-	int maxRecords=100;
+	//Variable that can regulate how many records that will be imported
+	int maxRecords=50;
+
+	//Final k to be used on the test data set
 	int recommended_k;
+		
 	double tp = 0; //true positive
 	double tn = 0; //true negative
 	double fp = 0; //false positive
@@ -27,7 +32,8 @@ public class KNN {
 	double precision = 0;
 	double recall = 0;
 
-	Map<Double, Integer> neighbours;
+	HashMap<Double, Integer> neighbours;
+	ArrayList<Integer> columnsWithMissingValues;
 
 	public KNN(){
 
@@ -37,6 +43,7 @@ public class KNN {
 		trainingData = importData("adult.train.5fold.csv");
 		System.out.println("Imported dataset trainingData");
 		
+		System.out.println(columnsWithMissingValues);
 		
 		//System.out.println("Imported dataset testData");
 		System.out.println("Replacing replaceMissingValues...please wait");
@@ -47,7 +54,8 @@ public class KNN {
 
 
 		System.out.println("Normalising data...please wait");
-		//0,2,4,10,10,12
+		
+		//0,2,4,10,10,12 are the columns with numerical data
 		normalise(0,trainingData);
 		normalise(2,trainingData);
 		normalise(4,trainingData);
@@ -55,37 +63,22 @@ public class KNN {
 		normalise(11,trainingData);
 		normalise(12,trainingData);
 		System.out.println("Normalised attributes on trainingData DONE");
-		long currentTime   = System.currentTimeMillis();
+		long currentTime   = System.currentTimeMillis(); //Debug
 		double formattingTime = (double)(currentTime - startTime)/1000;
 		System.out.println("Formatting completed in: " + formattingTime);
 		
-
-
-		//System.out.println("Data format done.");
-        //System.out.println(testData[1][0]);
-        //System.out.println(trainingData[1][14]);
 		System.out.println("Cross validation in progress...please wait");
 		fiveCV(5,trainingData);
 		System.out.println("Cross validation completed!");
-        //kayNN(39,5, testData, trainingData);
-        //double eu = euclideanDistance(1, trainingData,trainingData);
-        //System.out.println(eu);
-        //System.out.println(trainingData[1][4]);
-		//System.out.println(getMax(0, trainingData, trainingData));
-		//findMostCommonAttr(7,trainingData);
-		//testData = importData("adult.test.csv");
-		//replaceMissingValues(1,testData);
-		//replaceMissingValues(6,testData);
-		//replaceMissingValues(13,testData);
-		//findMedian(2, trainingData);
 		
-		currentTime   = System.currentTimeMillis();
-		double validationTime = (double)(currentTime - startTime)/1000;
+		currentTime   = System.currentTimeMillis();//Debug
+
+		double validationTime = (double)(currentTime - startTime)/1000;//Debug
 		System.out.println("Cross validation completed in: " + validationTime);
-		
+		/*
 		System.out.println("Importing test data...please wait");
 		testData = importData("adult.test.csv");
-		System.out.println("Imported test data");
+		System.out.println("Imported testData");
 		
 		System.out.println("Replacing replaceMissingValues...please wait");		
 		replaceMissingValues(1,testData);
@@ -102,19 +95,20 @@ public class KNN {
 		normalise(12,testData);
 		System.out.println("Normalised attributes on trainingData DONE");
 
+		//Applies the model on the test data with best k
 		knnModel(testData, trainingData, recommended_k);
 		
-		System.out.println("Using k: " + recommended_k);
-		printConfusionMatrix();
+		printConfusionMatrix(); //Print the confusion matrix in the terminal
 		precision = calculatePrecision();
 		System.out.println("Precision: " + precision);
 
 		recall = calculateRecall();
 		System.out.println("Recall: " + recall);
-		long endTime   = System.currentTimeMillis();
-		double totalTime = (double)(endTime - startTime)/1000;
-		System.out.println("Process completed in: " + totalTime);
 		
+		long endTime   = System.currentTimeMillis();//Debug
+		double totalTime = (double)(endTime - startTime)/1000;//Debug
+		System.out.println("Process completed in: " + totalTime);
+		*/
 	}
 
 
@@ -125,7 +119,6 @@ public class KNN {
 		//Read file to Scanner String
 		try {
 			readFile = new Scanner(file);
-			//scanner.useDelimiter(",");
 			return buildDataMatrix(readFile);
 		}
 		catch(IOException exception){
@@ -135,88 +128,71 @@ public class KNN {
 		return null;
 	}
 
-	private void setLabel(String label){
-		label = "";
-	}
-
-
-
+	//This method store the data set in a matrix
 	private String [][] buildDataMatrix(Scanner dataSet){
-		String [][] data = new String[0][0];
-		String [] row;
+		String [][] dataMatrix = new String[0][0];
+		String [][] tempDataMatrix; //Used
+		String [] currentRow; //Store the current record from csv file
+		//Counter
 		int loadedRecords = 0;
-		//rows = 0;
 		columns = 0;
-		String [][] tempData;
-		data = new String [data.length][columns];
-		ArrayList<Integer> columnsWithMissingValues = new ArrayList<Integer>();
+		//Stores columns index if it's missing a value
+		columnsWithMissingValues = new ArrayList<Integer>();
 
 		while(dataSet.hasNextLine() && loadedRecords<maxRecords){
-			//rows++;
 			//Set the num of columns for the matrix
-			row = dataSet.nextLine().split(",");
+			currentRow = dataSet.nextLine().split(",");
+			//If no data has been imported
 			if(columns == 0){
-				columns = row.length;
+				columns = currentRow.length;
 				//System.out.println("nr of columns: " + columns);
 				//create matrix
-				data = new String [data.length][columns];
+				dataMatrix = new String [dataMatrix.length][columns];
 			}
-			//Create a new matrix with space for new data
-			tempData = new String [data.length+1][columns];
+
+			//Create a new expanded matrix with space for new record
+			tempDataMatrix = new String [dataMatrix.length+1][columns];
 			
 	
-			//copy data
-			for (int i = 0; i < data.length; i++){
+			//copy data to the temporary matrix
+			for (int i = 0; i < dataMatrix.length; i++){
             	for (int j = 0; j < columns; j++){
-            		tempData[i][j] = data[i][j];
-            		//System.out.println("Copy data: " + data[i][j]);
+            		tempDataMatrix[i][j] = dataMatrix[i][j];
             	}
         	}
         
-       		//Add new data
+       		//Add new data to the last empty row
         	for(int k=0; k<columns;k++){
-        		tempData[data.length][k]=row[k].replaceAll("\\s","");//Ignores whitespace
-        		//System.out.println("Added data to temp: " + tempData[data.length][k]);
-        		/*
-        		if(tempData[data.length][k].equals("?")){
+        		tempDataMatrix[dataMatrix.length][k]=currentRow[k].replaceAll("\\s","");//Ignores whitespace
+        		//DEBUG//System.out.println("Added data to temp: " + tempData[data.length][k]);
+        		
+        		//Used to find out which columns where missing values
+        		if(tempDataMatrix[dataMatrix.length][k].equals("?")){
         			if(!columnsWithMissingValues.contains(k)){
         				columnsWithMissingValues.add(k);
         				//System.out.println("Missing value on column: " + k);
         			}
         		}
-        		*/
+        		
         	}
         	
-        	//set new data set variable
-        	data = new String [data.length][columns];
-        	data=tempData;
-        	/*
-        	for (int i = 0; i < rows; i++){
-        		//System.out.println("Data: " + i);
-            	for (int j = 0; j < columns; j++){
-            		//System.out.println(data[i][j]);
-            	}
-        	}
-        	*/
-        	//System.out.println(rows);
-        		loadedRecords++;
+        	//expand the matrix and store the new matrix
+        	dataMatrix = new String [dataMatrix.length][columns];
+        	dataMatrix=tempDataMatrix;
+        	
+        	loadedRecords++;
 		}
-		//System.out.println(columnsWithMissingValues);
-
-		return data;
+		return dataMatrix;
 	}
 
 	//performed on 1, 6, 13 
 	private void replaceMissingValues(int column, String [][] dataSet){
-			String word = findMostCommonAttr(column, dataSet);
-		    //System.out.println(word);
-		    //System.out.println(column);
-		    //System.out.println("Length" + dataSet.length);
+			String attributeName = findMostCommonAttr(column, dataSet);
 		    for(int k=1; k<dataSet.length;k++){
 		    	
         		if(dataSet[k][column].equals("?")){
         				//System.out.println("Before: " + dataSet[k][column]);
-        				trainingData[k][column] = word;
+        				trainingData[k][column] = attributeName;
         				//System.out.println("Replaced: " + dataSet[k][column] + " " + column + " " + k);
         			
         		}
@@ -225,11 +201,14 @@ public class KNN {
 
 	//performed on 1,3,5,6,7,8,9 and 13
 	private String findMostCommonAttr(int column, String [][] dataSet){
-		Map<String, Integer> attributeSet = new HashMap<String, Integer>();
+		//Store attribute names from a column and how amny times it occurs
+		HashMap<String, Integer> attributeSet = new HashMap<String, Integer>();
 		ArrayList<String> attributeNames = new ArrayList<String>();
+		
 		String mostCommonAttr = "";
 		String temp = "";
 		int biggestKey=0;
+		//i = 0 to ignore the header row in the data set
 		for (int i=1; i<dataSet.length; i++) {
 			if(attributeSet.containsKey(dataSet[i][column])){
 				attributeSet.put(dataSet[i][column], attributeSet.get(dataSet[i][column]) + 1);
@@ -239,7 +218,7 @@ public class KNN {
 				attributeNames.add(dataSet[i][column]);
 			}
 		}
-		
+
 		for(int j = 0; j<attributeNames.size(); j++){
 			if (attributeSet.get(attributeNames.get(j))>biggestKey){
 				biggestKey = attributeSet.get(attributeNames.get(j));
@@ -251,7 +230,8 @@ public class KNN {
 		return mostCommonAttr;
 
 	}
-	/*
+
+	/* Never used
 	//performed on 0,2,4,10,10,12
 	private void findMedian(int columnNum, String [][] dataSet){
 		ArrayList<Double> column = new ArrayList<Double>();
@@ -271,6 +251,7 @@ public class KNN {
 	}
 	*/
 
+	//Identifies the minimum value in a column
 	private double getMin(int columnNum, String [][] dataSet){
 		ArrayList<Double> column = new ArrayList<Double>();
 		//System.out.println(dataSet.length);
@@ -281,10 +262,10 @@ public class KNN {
 		}
 		Collections.sort(column);
 		//System.out.println("Min: " + column.get(0));
-
 		return column.get(0);
 	}
 
+	//Identifies the maximum value in a colum
 	private double getMax(int columnNum, String [][] dataSet){
 		ArrayList<Double> column = new ArrayList<Double>();
 		for (int j = 1; j < dataSet.length; j++){
@@ -303,28 +284,29 @@ public class KNN {
 		double max = getMax(column, dataSet);
 		double normValue;
 		double originalValue;
-		double constant = 1;
+		//To avoid division with zero
 		if(min != max){
-		for(int i = 1; i <dataSet.length; i++){
-			originalValue = Double.parseDouble(dataSet[i][column]);
+			for(int i = 1; i <dataSet.length; i++){
+				originalValue = Double.parseDouble(dataSet[i][column]);
 
-			normValue = Math.abs((originalValue - min)/(max - min));
+				normValue = Math.abs((originalValue - min)/(max - min));
 			
-			dataSet[i][column] = String.valueOf(normValue);
-			//System.out.println("Normalised " + originalValue + " too " + dataSet[i][column]);
-		}
+				dataSet[i][column] = String.valueOf(normValue);
+				//System.out.println("Normalised " + originalValue + " too " + dataSet[i][column]);
+			}
 		}
 	}
 
-	private String kayNN(int k, int row, String[][] testData, String[][] trainingData, Iterator <Integer> iterator){
+	// KNN method used for cross validation
+	private String k_NN(int k, int row, String[][] testData, String[][] trainingData, Iterator <Integer> iterator){
 		//System.out.println("kayNN method:-----------------------");
 		//Map<Double, Integer> neighbours = new HashMap<Double, Integer>();
+		String prediction;
 		neighbours = new HashMap<Double, Integer>();
 		
 		ArrayList<Double> neighbourDistances = new ArrayList<Double>();
 		//ArrayList<String> neighbourLabels = new ArrayList<String>();
 		
-		int nOfNeighbours = neighbourDistances.size();
 		//for (int i = 1; i < trainingData.length; i++){
 		while(iterator.hasNext()){
 			//System.out.println("Inside iterator");
@@ -338,30 +320,32 @@ public class KNN {
 				Collections.sort(neighbourDistances);
 			}	
 			else{
-				//System.out.println("neighbourDistances is full: " + neighbourDistances.size());
-				//System.out.println(distance + " < " + neighbourDistances.get(neighbourDistances.size()-1) );
+				//If Max number of neigbors reached and current distance is lower the the highest value in list
 				if(distance < neighbourDistances.get(neighbourDistances.size()-1)){
-					//System.out.println("Adding" + distance + " and " + currentIndex);
 					neighbours.remove(neighbourDistances.get(neighbourDistances.size()-1));
-					neighbours.put(distance, currentIndex);
 					neighbourDistances.remove(neighbourDistances.size()-1);
+					neighbours.put(distance, currentIndex);
 					neighbourDistances.add(distance);
 					Collections.sort(neighbourDistances);
 				}
 			}
 		}
 
-		//System.out.println("Distances list" + neighbourDistances);
-		//System.out.println("neighbours list" + neighbours);
-		//System.out.println("neighbours index" + neighbours.get(neighbourDistances.get(neighbourDistances.size()-1)));
-		//System.out.println(neighbours.values());
-		//System.out.println(neighbours.values());
-		return labelMaker(row, neighbours.values());
+		/* Debug
+		System.out.println("Distances list" + neighbourDistances);
+		System.out.println("neighbours list" + neighbours);
+		System.out.println("neighbours index" + neighbours.get(neighbourDistances.get(neighbourDistances.size()-1)));
+		System.out.println(neighbours.values());
+		System.out.println(neighbours.values());
+		*/
+
+		prediction = labelMaker(row, neighbours.values());
+		return prediction;
 
 	}
 
-	//FOr model
-	private String kayNN(int k, int row, String[][] testData, String[][] trainingData){
+	//For model
+	private String k_NN(int k, int row, String[][] testData, String[][] trainingData){
 		//System.out.println("kayNN method:-----------------------");
 		//Map<Double, Integer> neighbours = new HashMap<Double, Integer>();
 		neighbours = new HashMap<Double, Integer>();
@@ -514,7 +498,7 @@ public class KNN {
 					int testRow = iterator.next();
 					//System.out.println("Iterator input" + x);
 					//kayNN(k ,x, dataSet, dataSet);
-					if(dataSet[testRow][14].equals(kayNN(k ,testRow, dataSet, dataSet, iterator2))){
+					if(dataSet[testRow][14].equals(k_NN(k ,testRow, dataSet, dataSet, iterator2))){
 						predictedRight++;
 						//confusionMatrix(kayNN(k ,x, dataSet, dataSet), dataSet[x][14]);
 						//System.out.println("You're the best");
@@ -534,7 +518,7 @@ public class KNN {
 		double maxi = Collections.max(k_accuracy);
 		int ind = k_accuracy.indexOf(maxi);
 		int bestKay = valuesOf_k.get(ind);
-		System.out.println(k_accuracy);
+		System.out.println("Accuracies: " + k_accuracy);
 		System.out.println("K: " + bestKay + " accuracy: " + maxi);
 		writeToFile(valuesOf_k, k_accuracy, maxi, bestKay);
 		recommended_k = bestKay;
@@ -633,14 +617,16 @@ public class KNN {
 	}
 
 	private void knnModel(String[][] testData, String [][] trainingData, int k){
-		System.out.println(testData.length);
-		System.out.println(testData.length);
+		//Debug//System.out.println(testData.length);
+		//Debug//System.out.println(testData.length);
 		System.out.println("KNN model.. please wait");
 		System.out.println("Using K value: " + k);
 		for(int i = 1; i<testData.length;i++){
-				String predicted = kayNN(k, i, testData, trainingData);
+				String predicted = k_NN(k, i, testData, trainingData);
 				confusionMatrix(predicted, testData[i][14]);
-				System.out.println(predicted + " was " + testData[i][14]);
+				
+				//Used for debug
+				//System.out.println(predicted + " was " + testData[i][14]);
 			
 		}
 	}
