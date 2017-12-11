@@ -20,23 +20,24 @@ public class KNN {
 	
 	int columns;
 	//Variable that can regulate how many records that will be imported
-	int maxRecords=50;
+	int maxRecords=100; //12.06
 
 	//Final k to be used on the test data set
 	int recommended_k;
-		
+	int labelColumn = 14;	
+	int foldColumn = 15;
+	int maxKvalue = 39;
 	double tp = 0; //true positive
 	double tn = 0; //true negative
 	double fp = 0; //false positive
 	double fn = 0; //false negatie
 	double precision = 0;
 	double recall = 0;
-
+	//Stores the neigbours of current row
 	HashMap<Double, Integer> neighbours;
 	ArrayList<Integer> columnsWithMissingValues;
 
 	public KNN(){
-
 
 		long startTime = System.currentTimeMillis();
 		System.out.println("Importing dataset trainingData...please wait");
@@ -75,7 +76,7 @@ public class KNN {
 
 		double validationTime = (double)(currentTime - startTime)/1000;//Debug
 		System.out.println("Cross validation completed in: " + validationTime);
-		/*
+		
 		System.out.println("Importing test data...please wait");
 		testData = importData("adult.test.csv");
 		System.out.println("Imported testData");
@@ -108,10 +109,10 @@ public class KNN {
 		long endTime   = System.currentTimeMillis();//Debug
 		double totalTime = (double)(endTime - startTime)/1000;//Debug
 		System.out.println("Process completed in: " + totalTime);
-		*/
+		
 	}
 
-
+	//Imports data from a csv file
 	private String [][] importData(String fileName){
 		file = new File(fileName);
 		
@@ -300,8 +301,9 @@ public class KNN {
 	// KNN method used for cross validation
 	private String k_NN(int k, int row, String[][] testData, String[][] trainingData, Iterator <Integer> iterator){
 		//System.out.println("kayNN method:-----------------------");
-		//Map<Double, Integer> neighbours = new HashMap<Double, Integer>();
+	
 		String prediction;
+		//Stores Distance as Key, and index as Value
 		neighbours = new HashMap<Double, Integer>();
 		
 		ArrayList<Double> neighbourDistances = new ArrayList<Double>();
@@ -309,11 +311,9 @@ public class KNN {
 		
 		//for (int i = 1; i < trainingData.length; i++){
 		while(iterator.hasNext()){
-			//System.out.println("Inside iterator");
 			int currentIndex = iterator.next();
-			//System.out.println(currentIndex);
 			double distance = euclideanDistance(row, currentIndex, testData, trainingData);
-			
+			//If max number of neighborsnot reach
 			if(neighbourDistances.size()<k){
 				neighbourDistances.add(distance);
 				neighbours.put(distance, currentIndex);
@@ -323,8 +323,8 @@ public class KNN {
 				//If Max number of neigbors reached and current distance is lower the the highest value in list
 				if(distance < neighbourDistances.get(neighbourDistances.size()-1)){
 					neighbours.remove(neighbourDistances.get(neighbourDistances.size()-1));
-					neighbourDistances.remove(neighbourDistances.size()-1);
 					neighbours.put(distance, currentIndex);
+					neighbourDistances.remove(neighbourDistances.size()-1);
 					neighbourDistances.add(distance);
 					Collections.sort(neighbourDistances);
 				}
@@ -338,8 +338,7 @@ public class KNN {
 		System.out.println(neighbours.values());
 		System.out.println(neighbours.values());
 		*/
-
-		prediction = labelMaker(row, neighbours.values());
+		prediction = labelMaker(row);
 		return prediction;
 
 	}
@@ -347,28 +346,24 @@ public class KNN {
 	//For model
 	private String k_NN(int k, int row, String[][] testData, String[][] trainingData){
 		//System.out.println("kayNN method:-----------------------");
-		//Map<Double, Integer> neighbours = new HashMap<Double, Integer>();
+		String prediction;
+		//Stores Distance as Key, and index as Value
 		neighbours = new HashMap<Double, Integer>();
 		
 		ArrayList<Double> neighbourDistances = new ArrayList<Double>();
 		//ArrayList<String> neighbourLabels = new ArrayList<String>();
 		
-		int nOfNeighbours = neighbourDistances.size();
 		for (int i = 1; i < trainingData.length; i++){
-		//while(iterator.hasNext()){
-			//System.out.println("Inside iterator");
-			//nt currentIndex = iterator.next();
-			//System.out.println(currentIndex);
 			double distance = euclideanDistance(row, i, testData, trainingData);
 			
+			//If max number of neighborsnot reach
 			if(neighbourDistances.size()<k){
 				neighbourDistances.add(distance);
 				neighbours.put(distance, i);
 				Collections.sort(neighbourDistances);
 			}	
 			else{
-				//System.out.println("neighbourDistances is full: " + neighbourDistances.size());
-				//System.out.println(distance + " < " + neighbourDistances.get(neighbourDistances.size()-1) );
+				//If Max number of neigbors reached and current distance is lower the the highest value in list
 				if(distance < neighbourDistances.get(neighbourDistances.size()-1)){
 					//System.out.println("Adding" + distance + " and " + currentIndex);
 					neighbours.remove(neighbourDistances.get(neighbourDistances.size()-1));
@@ -380,52 +375,49 @@ public class KNN {
 			}
 		}
 
-		//System.out.println("Distances list" + neighbourDistances);
-		//System.out.println("neighbours list" + neighbours);
-		//System.out.println("neighbours index" + neighbours.get(neighbourDistances.get(neighbourDistances.size()-1)));
-		//System.out.println(neighbours.values());
-		//System.out.println(neighbours.values());
-		return labelMaker(row, neighbours.values());
+		prediction = labelMaker(row);
+		return prediction;
 
 	}
 
-	private String labelMaker(int row ,Collection indices){
+	//returns predicted label
+	private String labelMaker(int row){
 		//System.out.println("labelMaker");
 		HashMap<String, Integer> predictedEarnings = new HashMap<String, Integer>();
 		ArrayList<String> label = new ArrayList<String>();
+		//stores the indices of the neighbours
 		Iterator <Integer> iterator = neighbours.values().iterator();
 		String prediction = "";
-		//System.out.println(trainingData[1][14]);
-		while(iterator.hasNext()){
-			//System.out.println(iterator.next());
-			int index = iterator.next();
 		
-			prediction = trainingData[index][14];
+		//count all the different labels among the neigbors
+		while(iterator.hasNext()){
+			int index = iterator.next();
+
+			prediction = trainingData[index][labelColumn];
 			
 			if(!predictedEarnings.containsKey(prediction)){
-				predictedEarnings.put(trainingData[index][14], 1);
+				predictedEarnings.put(trainingData[index][labelColumn], 1);
 			}
 			else{
-				predictedEarnings.put(trainingData[index][14], predictedEarnings.get(trainingData[index][14]) + 1 );
-				label.add(trainingData[index][14]);
+				predictedEarnings.put(trainingData[index][labelColumn], predictedEarnings.get(trainingData[index][labelColumn]) + 1 );
+				label.add(trainingData[index][labelColumn]);
 			}
 			
 			
 		}
 
+		//Find the most frequent label
 		int maxValue = Collections.max(predictedEarnings.values());
-
 		for(int j = 0; j<label.size(); j++){
 			if (predictedEarnings.get(label.get(j)) == maxValue ){
 				prediction = label.get(j);
 			}	
 		}
-		//System.out.println(predictedEarnings);
-		//System.out.println(maxValue);
-		//System.out.println("Record is: " + trainingData[row][14] + " AGE: " + trainingData[row][8] + " Row: " + row + " " +  "predictied: " + prediction);
 
 		return prediction;
 	}
+
+	//calculates the distance between two rows
 	private double euclideanDistance(int row, int row2, String [][] testFold, String[][] trainingData){
 		//System.out.println("Euclidean method: ---------------------- ");
 		double distance = 0;
@@ -434,6 +426,7 @@ public class KNN {
 			//System.out.println("Euclidean p1: " + testFold[row][i]);
 			//System.out.println("Euclidean p2: " + trainingData[row2][i]);
 			
+			//try to perform a double operation
 			try{
 				double dp1 = Double.parseDouble(testFold[row][i]);
 				double dp2 = Double.parseDouble(trainingData[row2][i]);
@@ -444,7 +437,6 @@ public class KNN {
 
 				if(testFold[row][i].equals(trainingData[row2][i])){
 					distance++;
-					//System.out.println("String distance: " );
 				}
 			}
 		}
@@ -452,15 +444,15 @@ public class KNN {
 		return distance;
 	}
 
+	//Five fold corss validation method
 	private void fiveCV(int folds, String [][] dataSet){
-		ArrayList<Integer> current_fold;
+		ArrayList<Integer> current_fold = new ArrayList<Integer>();
 		ArrayList<Integer> training_fold;
 		ArrayList<Double> k_accuracy = new ArrayList<Double>();
 		ArrayList<Integer> valuesOf_k = new ArrayList<Integer>();
 		double predictedRight = 0;
 		double accuracy;
-		
-		for(int i = 1; i<40; i= i+2){
+		for(int i = 1; i<maxKvalue; i= i+2){
 			valuesOf_k.add(i);
 		}
 		
@@ -478,7 +470,7 @@ public class KNN {
 				current_fold = new ArrayList<Integer>();
 				training_fold = new ArrayList<Integer>();
 				for (int i = 1; i < dataSet.length; i++){
-					if(dataSet[i][15].equals(Integer.toString(fold))){
+					if(dataSet[i][foldColumn].equals(Integer.toString(fold))){
 						current_fold.add(i);
 					}
 					else{
@@ -486,19 +478,19 @@ public class KNN {
 					}
 				}
 
+				/* Debug
 				//System.out.println("Fold " + fold + " length: " + current_fold.size());
 				//System.out.println("Fold " + fold + " length: " + current_fold);
 				//System.out.println("Fold " + fold + " length: " + training_fold.size());
 				//System.out.println("Fold " + fold + " length: " + training_fold);
+				*/
+
 				Iterator <Integer> iterator = current_fold.iterator();
-				
-			
 				while(iterator.hasNext() && current_fold.size() != 0){
 					Iterator <Integer> iterator2 = training_fold.iterator();
 					int testRow = iterator.next();
-					//System.out.println("Iterator input" + x);
-					//kayNN(k ,x, dataSet, dataSet);
-					if(dataSet[testRow][14].equals(k_NN(k ,testRow, dataSet, dataSet, iterator2))){
+
+					if(dataSet[testRow][labelColumn].equals(k_NN(k ,testRow, dataSet, dataSet, iterator2))){
 						predictedRight++;
 						//confusionMatrix(kayNN(k ,x, dataSet, dataSet), dataSet[x][14]);
 						//System.out.println("You're the best");
@@ -509,6 +501,8 @@ public class KNN {
 					}
 				}
 			}
+			//Accuracy = number true positives / current_fold.size()
+			//System.out.println(current_fold.size());
 			accuracy=predictedRight/dataSet.length;
 			k_accuracy.add(accuracy);
 			System.out.println("Accuracy: " + accuracy);
@@ -524,9 +518,8 @@ public class KNN {
 		recommended_k = bestKay;
 	}
 
+	//Counts the different predeictions
 	private void confusionMatrix(String predicted, String actual){
-
-
 		if(predicted.equals(classifier)){
 			if(predicted.equals(actual)){
 				tp++;
@@ -546,6 +539,7 @@ public class KNN {
 
 	}
 
+	//Prints a confusion matrix to the terminal
 	private void printConfusionMatrix(){
 	
 		//System.out.println("TP: " + precision);
@@ -564,14 +558,17 @@ public class KNN {
 		System.out.println(String.format("%4s", trueNeg).replace(' ', ' '));
 	}
 
+
 	private double calculatePrecision(){
+		//true positive / true positiv + false positive
 		return tp/(tp+fp);
 	}
 	private double calculateRecall(){
+		//true positive / true positive + false negative
 		return tp/(tp+fn);
 	}
 
-	//Writes accuracy to file
+	//Writes  K accuracies to file
 	private void writeToFile(ArrayList<Integer> ks, ArrayList<Double> accuracy_list, double bestAccuracy, int bestK){
 		output = new File("grid.results.txt");
 		
@@ -616,9 +613,11 @@ public class KNN {
 
 	}
 
+	//Performs K NN with recommended best k on test data
 	private void knnModel(String[][] testData, String [][] trainingData, int k){
 		//Debug//System.out.println(testData.length);
-		//Debug//System.out.println(testData.length);
+		//Debug//System.out.println(trainingData.length);
+		
 		System.out.println("KNN model.. please wait");
 		System.out.println("Using K value: " + k);
 		for(int i = 1; i<testData.length;i++){
